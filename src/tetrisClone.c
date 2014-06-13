@@ -1,19 +1,13 @@
 // http://www.willusher.io/sdl2%20tutorials/2013/12/18/lesson-6-true-type-fonts-with-sdl_ttf/
 
-#include <SDL.h>
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL_image.h>
 #include <time.h>
 #include <stdlib.h>
-#include "block_data.h"
+#include "tetris_clone.h"
 
-#define NUMBER_OF_BLOCKS 7
-#define BLOCK_SIZE 25
-#define GRID_START_X 40
-#define GRID_START_Y 40
-#define DROP_START_X 3
-#define DROP_START_Y 1
 
 const char* WINDOW_NAME = "Tetris clone";
 const int SCREEN_WIDTH = 640;
@@ -30,12 +24,21 @@ int grid[10][16] = {0};
 int rotation = 0;
 unsigned long score = 0;
 
-int logSDLError(char* error){
+MODE mode = MODE_RUNNING;
+
+bool draw_required = true; //Has there been a change requiring a redraw?
+
+int fallTimer = 0;
+int fallTimerLimit = 40;
+
+int logSDLError(char* error)
+{
 	printf("%s: %s\n", error, SDL_GetError());
     return 1;
 }
 
-SDL_Texture* loadTexture(const char* file, SDL_Renderer *ren){
+SDL_Texture* loadTexture(const char* file, SDL_Renderer *ren)
+{
 	SDL_Texture *texture = IMG_LoadTexture(ren, file);
 	if (texture == NULL)		
 		logSDLError("LoadTexture");
@@ -263,27 +266,35 @@ int main(int argc, char* argv[]) {
                     case SDLK_0:
                     case SDLK_UP:
                         rotation += 1;
+                        draw_required = true;
                         break;
 			        case SDLK_1:
 				        useClip = 0; rotation = 0;
+                        draw_required = true;
 				        break;
 			        case SDLK_2:
 				        useClip = 1; rotation = 0;
+                        draw_required = true;
 				        break;
 			        case SDLK_3:
 				        useClip = 2; rotation = 0;
+                        draw_required = true;
 				        break;
 			        case SDLK_4:
 				        useClip = 3; rotation = 0;
+                        draw_required = true;
 				        break;
 			        case SDLK_5:
 				        useClip = 4; rotation = 0;
+                        draw_required = true;
 				        break;
 			        case SDLK_6:
 				        useClip = 5; rotation = 0;
+                        draw_required = true;
 				        break;
 			        case SDLK_7:
 				        useClip = 6; rotation = 0;
+                        draw_required = true;
 				        break;
 			        case SDLK_ESCAPE:
                     case SDLK_q:
@@ -291,6 +302,7 @@ int main(int argc, char* argv[]) {
 				        break;
                     case SDLK_DOWN:
                         drop_y += 1;
+                        draw_required = true;
                         if(!checkIfValidPosition()) { 
                             drop_y -= 1;
                             dropPiece();
@@ -298,13 +310,16 @@ int main(int argc, char* argv[]) {
                         break;
                     case SDLK_LEFT:
                         drop_x -= 1;
+                        draw_required = true;
                         if(!checkIfValidPosition()) drop_x += 1;
                         break;
                     case SDLK_RIGHT:
                         drop_x += 1;
+                        draw_required = true;
                         if(!checkIfValidPosition()) drop_x -= 1;
                         break;
                     case SDLK_SPACE:
+                        draw_required = true;
                         dropPiece();
                         break;
 			        default:
@@ -312,39 +327,54 @@ int main(int argc, char* argv[]) {
 		       }
 	        }
 	    }
-	    //Render the scene
-	    SDL_RenderClear(ren);
 
-        int bW, bH;
-        SDL_QueryTexture(background, NULL, NULL, &bW, &bH);
-        renderTexture(background, ren, 0, 0);
-
-        //draw the fixed peices
-        int i, j, x, y;
-        for(i=0; i<10; i++) {
-            for(j=0; j<16; j++) {
-                x =  GRID_START_X + BLOCK_SIZE * i;
-                y =  GRID_START_Y + BLOCK_SIZE * j;
-                int color = grid[i][j];
-                //printf("Color (%d,%d)=%d\n", i, j, color);
-                if(color>0)
-                    renderTextureClip(blocks, ren, x, y, &blockClips[color-1]);
+        fallTimer++;
+        if(fallTimer >= fallTimerLimit) {
+            fallTimer = 0;
+            drop_y += 1;
+            draw_required = true;
+            if(!checkIfValidPosition()) { 
+                drop_y -= 1;
+                dropPiece();
             }
         }
 
-        //drops[1].peice[0].blocks[0].x = 0;
-        //printf("Lets try to find the drop");
-        DROP *d = (DROP*)dropData+useClip+1;
-        //printf("Drop found");
-        int r = rotation%(d->rotations);
-        //printf("Rotation %d\n", r);
-        PIECE *p = &(d->peice[r]);
-        x = drop_x;
-        y = drop_y;
-        drawPiece(ren, p, x, y, useClip);
+        if(draw_required) {
+	        //Render the scene
+	        SDL_RenderClear(ren);
 
-        SDL_RenderPresent(ren);
-        SDL_Delay(70);
+            int bW, bH;
+            SDL_QueryTexture(background, NULL, NULL, &bW, &bH);
+            renderTexture(background, ren, 0, 0);
+
+            //draw the fixed peices
+            int i, j, x, y;
+            for(i=0; i<10; i++) {
+                for(j=0; j<16; j++) {
+                    x =  GRID_START_X + BLOCK_SIZE * i;
+                    y =  GRID_START_Y + BLOCK_SIZE * j;
+                    int color = grid[i][j];
+                    //printf("Color (%d,%d)=%d\n", i, j, color);
+                    if(color>0)
+                        renderTextureClip(blocks, ren, x, y, &blockClips[color-1]);
+                }
+            }
+
+            //drops[1].peice[0].blocks[0].x = 0;
+            //printf("Lets try to find the drop");
+            DROP *d = (DROP*)dropData+useClip+1;
+            //printf("Drop found");
+            int r = rotation%(d->rotations);
+            //printf("Rotation %d\n", r);
+            PIECE *p = &(d->peice[r]);
+            x = drop_x;
+            y = drop_y;
+            drawPiece(ren, p, x, y, useClip);
+
+            SDL_RenderPresent(ren);
+
+        }
+        SDL_Delay(20);
     }
 
     // Close and destroy the window
