@@ -28,6 +28,7 @@ int drop_x = DROP_START_X;
 int drop_y = DROP_START_Y;
 int grid[10][16] = {0};
 int rotation = 0;
+unsigned long score = 0;
 
 int logSDLError(char* error){
 	printf("%s: %s\n", error, SDL_GetError());
@@ -82,29 +83,78 @@ int pickNewPiece()
     return (rand()%7);
 }
 
-void dropPiece()
+void deleteLine(int y)
+{
+    int x;
+    for(; y>0; y--) {
+        for(x=0; x<10; x++) {
+            grid[x][y] = grid[x][y-1];
+        }
+    }
+    //clear top line
+    for(x=0; x<10; x++) {
+        grid[x][0] = 0;
+    }
+}
+
+void clearLines()
+{
+    int x, y;
+    bool lineFull;
+    for(y=0; y<16; y++) {
+        lineFull = true; //assume the line is full
+        for(x=0; x<10; x++) {
+            int color = grid[x][y];
+            if(color == 0) {
+                lineFull = false;
+                break;
+            }
+        }
+
+        if(lineFull) {
+            deleteLine(y);
+            score += 1;
+            printf("Score %lu\n", score);
+        }
+    }
+}
+
+// Checks if the piece is allowed to be where it is
+bool checkIfValidPosition()
 {
     DROP *d = (DROP*)dropData+useClip+1;
-    //printf("Drop found");
     int r = rotation%(d->rotations);
-    //printf("Rotation %d\n", r);
     PIECE *p = &(d->peice[r]);
     int i, x, y;
+
+    for(i=0; i<4; i++) {  //Check if this fall is valid
+            BLOCK *b = &(p->blocks[i]);
+        x =  (drop_x + b->x);
+        y =  (drop_y + b->y);
+        if(x >= 0 && x < 10 && y < 16) {
+            if(grid[x][y] != 0) {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+    return true;
+}
+
+void dropPiece()
+{
+
+    DROP *d = (DROP*)dropData+useClip+1;
+    int r = rotation%(d->rotations);
+    PIECE *p = &(d->peice[r]);
+    int i, x, y;
+
     bool keepFalling = true;
     while(keepFalling) {
         drop_y += 1;
-        for(i=0; i<4; i++) {  //Check if this fall is valid
-            BLOCK *b = &(p->blocks[i]);
-            x =  (drop_x + b->x);
-            y =  (drop_y + b->y);
-            if(x >= 0 && y >= 0 && x < 10 && y < 16) {
-                if(grid[x][y] != 0) {
-                    keepFalling = false; 
-                    break;
-                }
-            } else {
-                keepFalling = false;
-            }
+        if(!checkIfValidPosition()) {
+            keepFalling = false;
         }
     }
     drop_y -= 1; //that last step wasn't valid so undo
@@ -122,6 +172,8 @@ void dropPiece()
     drop_x = DROP_START_X;
     drop_y = DROP_START_Y;
     useClip = pickNewPiece();
+    rotation = 0;
+    clearLines();
 }
 
 int main(int argc, char* argv[]) {
@@ -239,12 +291,18 @@ int main(int argc, char* argv[]) {
 				        break;
                     case SDLK_DOWN:
                         drop_y += 1;
+                        if(!checkIfValidPosition()) { 
+                            drop_y -= 1;
+                            dropPiece();
+                        }
                         break;
                     case SDLK_LEFT:
                         drop_x -= 1;
+                        if(!checkIfValidPosition()) drop_x += 1;
                         break;
                     case SDLK_RIGHT:
                         drop_x += 1;
+                        if(!checkIfValidPosition()) drop_x -= 1;
                         break;
                     case SDLK_SPACE:
                         dropPiece();
