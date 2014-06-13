@@ -29,7 +29,8 @@ MODE mode = MODE_RUNNING;
 bool draw_required = true; //Has there been a change requiring a redraw?
 
 int fallTimer = 0;
-int fallTimerLimit = 30;//40; // 6 is quite playable -- 4 is near impossible
+int fallTimerLimit = 35;//35; // 6 is quite playable -- 4 is near impossible
+int fallTimerMin = 4;
 
 int logSDLError(char* error)
 {
@@ -117,7 +118,10 @@ void clearLines()
         if(lineFull) {
             deleteLine(y);
             score += 1;
-            printf("Score %lu\n", score);
+            if(fallTimerLimit > fallTimerMin && score%((score/10)+1) == 0) { 
+                fallTimerLimit -=1;
+            }
+            printf("Score %lu    Delay: %d\n", score, fallTimerLimit);
         }
     }
 }
@@ -256,7 +260,7 @@ int main(int argc, char* argv[]) {
 	    blockClips[i].h = BLOCK_SIZE;
     }
     
-    // The window is open: enter program loop (see SDL_PollEvent)
+    useClip = pickNewPiece();
 
     //SDL_Delay(3000);  // Pause execution for 3000 milliseconds, for example
     //Our event structure
