@@ -29,7 +29,7 @@ MODE mode = MODE_RUNNING;
 bool draw_required = true; //Has there been a change requiring a redraw?
 
 int fallTimer = 0;
-int fallTimerLimit = 40;
+int fallTimerLimit = 30;//40; // 6 is quite playable -- 4 is near impossible
 
 int logSDLError(char* error)
 {
@@ -176,7 +176,12 @@ void dropPiece()
     drop_y = DROP_START_Y;
     useClip = pickNewPiece();
     rotation = 0;
+    fallTimer = 0;
     clearLines();
+    if(!checkIfValidPosition()) {
+        //Game over
+        mode = MODE_GAMEOVER;
+    }
 }
 
 int main(int argc, char* argv[]) {
@@ -258,6 +263,13 @@ int main(int argc, char* argv[]) {
     SDL_Event e;
     bool quit = false;
     while (!quit){
+
+        if(mode == MODE_GAMEOVER) {
+            printf("\nGAME OVER\nScore: %lu\n\n", score);
+            quit = true;
+            break;
+        }
+
 	    while (SDL_PollEvent(&e)) {
 		    if (e.type == SDL_QUIT)
 			    quit = true;
