@@ -23,6 +23,7 @@ void dropPiece();
 typedef enum {
     MODE_RUNNING,
     MODE_GAMEOVER,
-    MODE_START
+    MODE_START,
+    MODE_PAUSE
 } MODE;
 

@@ -268,10 +268,29 @@ int main(int argc, char* argv[]) {
     bool quit = false;
     while (!quit){
 
+        SDL_Delay(20);
+
         if(mode == MODE_GAMEOVER) {
             printf("\nGAME OVER\nScore: %lu\n\n", score);
             quit = true;
             break;
+        } else if(mode == MODE_PAUSE) {
+            while (SDL_PollEvent(&e)) {
+                if (e.type == SDL_KEYDOWN) {
+                    switch (e.key.keysym.sym){
+                        case SDLK_p:
+                            mode = MODE_RUNNING;
+                            break;
+                        case SDLK_q:
+                        case SDLK_ESCAPE:
+                            quit = true;
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            continue;
         }
 
 	    while (SDL_PollEvent(&e)) {
@@ -282,6 +301,7 @@ int main(int argc, char* argv[]) {
                     case SDLK_0:
                     case SDLK_UP:
                         rotation += 1;
+                        if(!checkIfValidPosition()) rotation -= 1;
                         draw_required = true;
                         break;
 			        case SDLK_1:
@@ -338,6 +358,10 @@ int main(int argc, char* argv[]) {
                         draw_required = true;
                         dropPiece();
                         break;
+                    case SDLK_p:
+                        if(mode == MODE_PAUSE)  mode = MODE_RUNNING;
+                        else                    mode = MODE_PAUSE;
+                        break;
 			        default:
 				        break;
 		       }
@@ -390,7 +414,7 @@ int main(int argc, char* argv[]) {
             SDL_RenderPresent(ren);
 
         }
-        SDL_Delay(20);
+        
     }
 
     // Close and destroy the window
