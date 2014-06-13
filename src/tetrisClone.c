@@ -6,7 +6,7 @@
 #include <SDL_image.h>
 #include <time.h>
 #include <stdlib.h>
-#include "tetris_clone.h"
+#include "tetrisClone.h"
 
 
 const char* WINDOW_NAME = "Tetris clone";
