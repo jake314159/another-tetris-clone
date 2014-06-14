@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include "tetrisClone.h"
+#include "piece_picker.h"
 
 #define SCORE_BUFFER_SIZE 20
 
@@ -47,11 +48,6 @@ void drawPiece(SDL_Renderer* ren, PIECE *p, int xOrigin, int yOrigin, int color)
         y =  GRID_START_Y + BLOCK_SIZE * (yOrigin + b->y);
         renderTextureClip(blocks, ren, x, y, &blockClips[color]);
     }
-}
-
-int pickNewPiece()
-{
-    return (rand()%7);
 }
 
 void deleteLine(int y)

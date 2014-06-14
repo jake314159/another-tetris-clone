@@ -11,7 +11,6 @@
 
 
 void drawPiece(SDL_Renderer* ren, PIECE *p, int xOrigin, int yOrigin, int color);
-int pickNewPiece();
 void deleteLine(int y);
 void clearLines();
 bool checkIfValidPosition();
