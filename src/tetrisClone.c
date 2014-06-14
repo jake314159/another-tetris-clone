@@ -4,25 +4,34 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 #include <time.h>
 #include <stdlib.h>
 #include "tetrisClone.h"
 
+#define SCORE_BUFFER_SIZE 13
 
 const char* WINDOW_NAME = "Tetris clone";
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
+const int fontSize = 48;
+const char* fontFile = "fonts/sample.ttf";
+const int score_x = 450;
+const int score_y = 100;
+const SDL_Color score_color = { 255, 255, 255 };
 
 DROP* dropData;
 int useClip = 0;
 SDL_Rect blockClips[NUMBER_OF_BLOCKS];
 SDL_Texture *blocks;
+TTF_Font *font;
 
 int drop_x = DROP_START_X;
 int drop_y = DROP_START_Y;
 int grid[10][16] = {0};
 int rotation = 0;
 unsigned long score = 0;
+char score_buffer[SCORE_BUFFER_SIZE];
 
 MODE mode = MODE_RUNNING;
 
@@ -69,6 +78,34 @@ void renderTextureClip(SDL_Texture *tex, SDL_Renderer *ren, int x, int y, SDL_Re
 	//Query the texture to get its width and height to use
 	//SDL_QueryTexture(tex, NULL, NULL, &dst.w, &dst.h);
 	SDL_RenderCopy(ren, tex, clip, &dst);
+}
+
+SDL_Texture* renderText(char* message, TTF_Font* font,
+	SDL_Color color, SDL_Renderer *renderer)
+{
+	//Open the font
+	/*TTF_Font *font = TTF_OpenFont(fontFile.c_str(), fontSize);
+	if (font == nullptr){
+		logSDLError(std::cout, "TTF_OpenFont");
+		return nullptr;
+	}	*/
+
+	//We need to first render to a surface as that's what TTF_RenderText
+	//returns, then load that surface into a texture
+	SDL_Surface *surf = TTF_RenderText_Blended(font, message, color);
+	if (surf == NULL){
+		TTF_CloseFont(font);
+		logSDLError("TTF_RenderText");
+		return NULL;
+	}
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surf);
+	if (texture == NULL){
+		logSDLError("CreateTexture");
+	}
+	//Clean up the surface and font
+	SDL_FreeSurface(surf);
+	//TTF_CloseFont(font);
+	return texture;
 }
 
 void drawPiece(SDL_Renderer* ren, PIECE *p, int xOrigin, int yOrigin, int color) 
@@ -200,6 +237,12 @@ int main(int argc, char* argv[]) {
 	    return 1;
     }
 
+    if (TTF_Init() != 0){
+	    logSDLError("TTF_Init");
+	    return 1;
+    }
+
+
 
     // Create an application window with the following settings:
     window = SDL_CreateWindow(
@@ -226,6 +269,12 @@ int main(int argc, char* argv[]) {
     dropData = getDrops();
 
     srand(time(NULL));
+
+    //Open the font
+	font = TTF_OpenFont(fontFile, fontSize);
+	if (font == NULL){
+		return logSDLError("TTF_OpenFont");
+	}	
 
     SDL_Texture *background = loadTexture("images/bkg.png", ren);
     SDL_Texture *image = loadTexture("images/image.bmp", ren);
@@ -411,6 +460,13 @@ int main(int argc, char* argv[]) {
             y = drop_y;
             drawPiece(ren, p, x, y, useClip);
 
+            sprintf(score_buffer, "%lu", score);
+            SDL_Texture *font_image = renderText(score_buffer, font, score_color, ren);
+            if (font_image == NULL){
+	            return 1;
+            }            
+            renderTexture(font_image, ren, score_x, score_y);
+
             SDL_RenderPresent(ren);
 
         }
@@ -422,6 +478,7 @@ int main(int argc, char* argv[]) {
     SDL_DestroyTexture(image);
     SDL_DestroyTexture(sheet);
     SDL_DestroyTexture(blocks);
+    TTF_CloseFont(font);
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(window);
 

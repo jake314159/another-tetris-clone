@@ -20,6 +20,7 @@ void clearLines();
 bool checkIfValidPosition();
 void dropPiece();
 
+
 typedef enum {
     MODE_RUNNING,
     MODE_GAMEOVER,
