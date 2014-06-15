@@ -9,16 +9,13 @@
 
 #define SCORE_BUFFER_SIZE 20
 
-#define NEXT_PIECE_Y 6
-#define NEXT_PIECE_X 16
-
 const char* WINDOW_NAME = "Tetris clone";
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int fontSize = 48;
 const char* fontFile = "fonts/sample.ttf";
-const int score_x = 450;
-const int score_y = 100;
+const int score_x = 440;
+const int score_y = 70;
 const SDL_Color score_color = { 255, 255, 255 };
 
 DROP* dropData;

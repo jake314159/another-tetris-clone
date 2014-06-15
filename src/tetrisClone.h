@@ -8,6 +8,8 @@
 #define GRID_START_Y 40
 #define DROP_START_X 3
 #define DROP_START_Y 1
+#define NEXT_PIECE_Y 6
+#define NEXT_PIECE_X 16
 
 
 void drawPiece(SDL_Renderer* ren, PIECE *p, int xOrigin, int yOrigin, int color);
