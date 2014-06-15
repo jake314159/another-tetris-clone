@@ -15,6 +15,7 @@ void deleteLine(int y);
 void clearLines();
 bool checkIfValidPosition();
 void dropPiece();
+void incScore();
 
 
 typedef enum {

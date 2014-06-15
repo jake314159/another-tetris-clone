@@ -9,6 +9,9 @@
 
 #define SCORE_BUFFER_SIZE 20
 
+#define NEXT_PIECE_Y 6
+#define NEXT_PIECE_X 16
+
 const char* WINDOW_NAME = "Tetris clone";
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -19,6 +22,7 @@ const int score_y = 100;
 const SDL_Color score_color = { 255, 255, 255 };
 
 DROP* dropData;
+int nextPiece = 0;
 int useClip = 0;
 SDL_Rect blockClips[NUMBER_OF_BLOCKS];
 SDL_Texture *blocks;
@@ -80,11 +84,7 @@ void clearLines()
 
         if(lineFull) {
             deleteLine(y);
-            score += 1;
-            if(fallTimerLimit > fallTimerMin && score%((score/10)+1) == 0) { 
-                fallTimerLimit -=1;
-            }
-            printf("Score %lu    Delay: %d\n", score, fallTimerLimit);
+            incScore();
         }
     }
 }
@@ -110,6 +110,23 @@ bool checkIfValidPosition()
         }
     }
     return true;
+}
+
+void incScore()
+{
+    score += 1;
+    if(fallTimerLimit <= fallTimerMin) {
+
+    } else if( fallTimerLimit >= 10) {
+        if(score%((score/10)+1) == 0) { 
+            fallTimerLimit -=1;
+        }
+    } else {
+        if ((score%(400/fallTimerLimit)) == 0) {
+            fallTimerLimit -= 1;
+        }
+    }
+    printf("Score %lu    Delay: %d\n", score, fallTimerLimit);
 }
 
 void dropPiece()
@@ -141,7 +158,8 @@ void dropPiece()
 
     drop_x = DROP_START_X;
     drop_y = DROP_START_Y;
-    useClip = pickNewPiece();
+    useClip = nextPiece;
+    nextPiece = pickNewPiece();
     rotation = 0;
     fallTimer = 0;
     clearLines();
@@ -224,6 +242,7 @@ int main(int argc, char* argv[]) {
 	    blockClips[i].h = BLOCK_SIZE;
     }
     
+    nextPiece = pickNewPiece();
     useClip = pickNewPiece();
 
     //SDL_Delay(3000);  // Pause execution for 3000 milliseconds, for example
@@ -374,6 +393,13 @@ int main(int argc, char* argv[]) {
             x = drop_x;
             y = drop_y;
             drawPiece(ren, p, x, y, useClip);
+
+            //Draw the next piece to the right
+            DROP *dN = (DROP*)dropData+nextPiece+1;
+            PIECE *pN = &(dN->peice[0]); //rotation 0
+            x = drop_x;
+            y = drop_y;
+            drawPiece(ren, pN, NEXT_PIECE_X, NEXT_PIECE_Y, nextPiece);
 
             sprintf(score_buffer, "%lu", score);
             SDL_Texture *font_image = renderText(score_buffer, font, score_color, ren);

@@ -3,7 +3,7 @@
 // 7*4 elements
 // 2 of each piece
 #define PIECE_LIST_LENGTH 14
-int pieceList[] = {0,1,2,3,4,5,6,0,1,2,3,4,5,6};
+int pieceList[] = {0,1,2,3,4,5,6,0,1,2,3,4,5,6,0,1,2,3,4,5,6};
 int piece_pos = PIECE_LIST_LENGTH;
 
 void shuffle_pieces()
