@@ -29,7 +29,9 @@ int drop_x = DROP_START_X;
 int drop_y = DROP_START_Y;
 int grid[10][16] = {0};
 int rotation = 0;
+
 unsigned long score = 0;
+unsigned long scoreInBuffer = -1;
 char score_buffer[SCORE_BUFFER_SIZE];
 
 MODE mode = MODE_RUNNING;
@@ -47,7 +49,9 @@ void drawPiece(SDL_Renderer* ren, PIECE *p, int xOrigin, int yOrigin, int color)
         BLOCK *b = &(p->blocks[i]);
         x =  GRID_START_X + BLOCK_SIZE * (xOrigin + b->x);
         y =  GRID_START_Y + BLOCK_SIZE * (yOrigin + b->y);
-        renderTextureClip(blocks, ren, x, y, &blockClips[color]);
+        if( y >= GRID_START_Y ) {
+            renderTextureClip(blocks, ren, x, y, &blockClips[color]);
+        }
     }
 }
 
@@ -95,12 +99,16 @@ bool checkIfValidPosition()
     int i, x, y;
 
     for(i=0; i<4; i++) {  //Check if this fall is valid
-            BLOCK *b = &(p->blocks[i]);
+        BLOCK *b = &(p->blocks[i]);
         x =  (drop_x + b->x);
         y =  (drop_y + b->y);
         if(x >= 0 && x < 10 && y < 16) {
-            if(grid[x][y] != 0) {
-                return false;
+            if( y < 0 ) {
+                return true; //nothing can be above the grid
+            } else {
+                if(grid[x][y] != 0) {
+                    return false;
+                }
             }
         } else {
             return false;
@@ -128,7 +136,6 @@ void incScore()
 
 void dropPiece()
 {
-
     DROP *d = (DROP*)dropData+useClip+1;
     int r = rotation%(d->rotations);
     PIECE *p = &(d->peice[r]);
@@ -281,7 +288,9 @@ int main(int argc, char* argv[]) {
                     case SDLK_0:
                     case SDLK_UP:
                         rotation += 1;
-                        if(!checkIfValidPosition()) rotation -= 1;
+                        if(!checkIfValidPosition()) {
+                            rotation -= 1;
+                        }
                         draw_required = true;
                         break;
 			        case SDLK_1:
@@ -374,18 +383,13 @@ int main(int argc, char* argv[]) {
                     x =  GRID_START_X + BLOCK_SIZE * i;
                     y =  GRID_START_Y + BLOCK_SIZE * j;
                     int color = grid[i][j];
-                    //printf("Color (%d,%d)=%d\n", i, j, color);
                     if(color>0)
                         renderTextureClip(blocks, ren, x, y, &blockClips[color-1]);
                 }
             }
 
-            //drops[1].peice[0].blocks[0].x = 0;
-            //printf("Lets try to find the drop");
             DROP *d = (DROP*)dropData+useClip+1;
-            //printf("Drop found");
             int r = rotation%(d->rotations);
-            //printf("Rotation %d\n", r);
             PIECE *p = &(d->peice[r]);
             x = drop_x;
             y = drop_y;
@@ -398,7 +402,10 @@ int main(int argc, char* argv[]) {
             y = drop_y;
             drawPiece(ren, pN, NEXT_PIECE_X, NEXT_PIECE_Y, nextPiece);
 
-            sprintf(score_buffer, "%lu", score);
+            if(scoreInBuffer != score) {
+                sprintf(score_buffer, "%lu", score);
+                scoreInBuffer = score;
+            }
             SDL_Texture *font_image = renderText(score_buffer, font, score_color, ren);
             if (font_image == NULL){
 	            return 1;
