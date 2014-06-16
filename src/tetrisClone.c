@@ -337,7 +337,6 @@ int main(int argc, char* argv[]) {
 			        quit = true;
                 if (e.type == SDL_KEYDOWN){
 		            switch (e.key.keysym.sym){
-                        case SDLK_0:
                         case SDLK_UP:
                             rotation += 1;
                             if(!checkIfValidPosition()) {
@@ -345,34 +344,6 @@ int main(int argc, char* argv[]) {
                             }
                             draw_required = true;
                             break;
-			            case SDLK_1:
-				            useClip = 0; rotation = 0;
-                            draw_required = true;
-				            break;
-			            case SDLK_2:
-				            useClip = 1; rotation = 0;
-                            draw_required = true;
-				            break;
-			            case SDLK_3:
-				            useClip = 2; rotation = 0;
-                            draw_required = true;
-				            break;
-			            case SDLK_4:
-				            useClip = 3; rotation = 0;
-                            draw_required = true;
-				            break;
-			            case SDLK_5:
-				            useClip = 4; rotation = 0;
-                            draw_required = true;
-				            break;
-			            case SDLK_6:
-				            useClip = 5; rotation = 0;
-                            draw_required = true;
-				            break;
-			            case SDLK_7:
-				            useClip = 6; rotation = 0;
-                            draw_required = true;
-				            break;
 			            case SDLK_ESCAPE:
                         case SDLK_q:
 				            quit = true;
