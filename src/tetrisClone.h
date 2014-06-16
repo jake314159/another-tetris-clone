@@ -9,6 +9,7 @@
 #define DROP_START_X 3
 #define DROP_START_Y 1
 #define NEXT_PIECE_Y 6
+#define FRAME_TIME_DELAY 20
 #define NEXT_PIECE_X 16
 
 
@@ -19,6 +20,9 @@ bool checkIfValidPosition();
 void dropPiece();
 void incScore();
 
+void draw_game_paused(SDL_Renderer* ren);
+void draw_game_running(SDL_Renderer* ren);
+void draw_score(SDL_Renderer* ren);
 
 typedef enum {
     MODE_RUNNING,

@@ -9,6 +9,8 @@
 
 #define SCORE_BUFFER_SIZE 20
 
+SDL_Texture *background;
+
 const char* WINDOW_NAME = "Tetris clone";
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -173,6 +175,57 @@ void dropPiece()
     }
 }
 
+void draw_score(SDL_Renderer* ren)
+{
+    if(scoreInBuffer != score) {
+        sprintf(score_buffer, "%lu", score);
+        scoreInBuffer = score;
+    }
+    SDL_Texture *font_image = renderText(score_buffer, font, score_color, ren);
+    if (font_image == NULL){
+        exit(1);
+    }            
+        renderTexture(font_image, ren, score_x, score_y);
+}
+
+void draw_game_running(SDL_Renderer* ren)
+{
+    int bW, bH;
+    SDL_QueryTexture(background, NULL, NULL, &bW, &bH);
+    renderTexture(background, ren, 0, 0);
+
+    //draw the fixed peices
+    int i, j, x, y;
+    for(i=0; i<10; i++) {
+        for(j=0; j<16; j++) {
+            x =  GRID_START_X + BLOCK_SIZE * i;
+            y =  GRID_START_Y + BLOCK_SIZE * j;
+            int color = grid[i][j];
+            if(color>0)
+                renderTextureClip(blocks, ren, x, y, &blockClips[color-1]);
+        }
+    }
+
+    DROP *d = (DROP*)dropData+useClip+1;
+    int r = rotation%(d->rotations);
+    PIECE *p = &(d->peice[r]);
+    x = drop_x;
+    y = drop_y;
+    drawPiece(ren, p, x, y, useClip);
+    
+    //Draw the next piece to the right
+    DROP *dN = (DROP*)dropData+nextPiece+1;
+    PIECE *pN = &(dN->peice[0]); //rotation 0
+    x = drop_x;
+    y = drop_y;
+    drawPiece(ren, pN, NEXT_PIECE_X, NEXT_PIECE_Y, nextPiece);
+}
+
+void draw_game_paused(SDL_Renderer* ren)
+{
+    renderTexture(background, ren, 0, 0);
+}
+
 int main(int argc, char* argv[]) {
 
     SDL_Window *window;                    // Declare a pointer
@@ -213,7 +266,7 @@ int main(int argc, char* argv[]) {
 		return logSDLError("TTF_OpenFont");
 	}	
 
-    SDL_Texture *background = loadTexture("images/bkg.png", ren);
+    background = loadTexture("images/bkg.png", ren);
     SDL_Texture *image = loadTexture("images/image.bmp", ren);
     if (background == NULL || image == NULL) {
 	    return 4;
@@ -255,8 +308,9 @@ int main(int argc, char* argv[]) {
     bool quit = false;
     while (!quit){
 
-        SDL_Delay(20);
+        SDL_Delay(FRAME_TIME_DELAY);
 
+        // Event loop for each possible game mode
         if(mode == MODE_GAMEOVER) {
             printf("\nGAME OVER\nScore: %lu\n\n", score);
             quit = true;
@@ -277,140 +331,114 @@ int main(int argc, char* argv[]) {
                     }
                 }
             }
-            continue;
+        } else if(mode == MODE_RUNNING) {
+	        while (SDL_PollEvent(&e)) {
+		        if (e.type == SDL_QUIT)
+			        quit = true;
+                if (e.type == SDL_KEYDOWN){
+		            switch (e.key.keysym.sym){
+                        case SDLK_0:
+                        case SDLK_UP:
+                            rotation += 1;
+                            if(!checkIfValidPosition()) {
+                                rotation -= 1;
+                            }
+                            draw_required = true;
+                            break;
+			            case SDLK_1:
+				            useClip = 0; rotation = 0;
+                            draw_required = true;
+				            break;
+			            case SDLK_2:
+				            useClip = 1; rotation = 0;
+                            draw_required = true;
+				            break;
+			            case SDLK_3:
+				            useClip = 2; rotation = 0;
+                            draw_required = true;
+				            break;
+			            case SDLK_4:
+				            useClip = 3; rotation = 0;
+                            draw_required = true;
+				            break;
+			            case SDLK_5:
+				            useClip = 4; rotation = 0;
+                            draw_required = true;
+				            break;
+			            case SDLK_6:
+				            useClip = 5; rotation = 0;
+                            draw_required = true;
+				            break;
+			            case SDLK_7:
+				            useClip = 6; rotation = 0;
+                            draw_required = true;
+				            break;
+			            case SDLK_ESCAPE:
+                        case SDLK_q:
+				            quit = true;
+				            break;
+                        case SDLK_DOWN:
+                            drop_y += 1;
+                            draw_required = true;
+                            if(!checkIfValidPosition()) { 
+                                drop_y -= 1;
+                                dropPiece();
+                            }
+                            break;
+                        case SDLK_LEFT:
+                            drop_x -= 1;
+                            draw_required = true;
+                            if(!checkIfValidPosition()) drop_x += 1;
+                            break;
+                        case SDLK_RIGHT:
+                            drop_x += 1;
+                            draw_required = true;
+                            if(!checkIfValidPosition()) drop_x -= 1;
+                            break;
+                        case SDLK_SPACE:
+                            draw_required = true;
+                            dropPiece();
+                            break;
+                        case SDLK_p:
+                            if(mode == MODE_PAUSE)  mode = MODE_RUNNING;
+                            else                    mode = MODE_PAUSE;
+                            break;
+			            default:
+				            break;
+		           }
+	            }
+	        }
         }
 
-	    while (SDL_PollEvent(&e)) {
-		    if (e.type == SDL_QUIT)
-			    quit = true;
-            if (e.type == SDL_KEYDOWN){
-		        switch (e.key.keysym.sym){
-                    case SDLK_0:
-                    case SDLK_UP:
-                        rotation += 1;
-                        if(!checkIfValidPosition()) {
-                            rotation -= 1;
-                        }
-                        draw_required = true;
-                        break;
-			        case SDLK_1:
-				        useClip = 0; rotation = 0;
-                        draw_required = true;
-				        break;
-			        case SDLK_2:
-				        useClip = 1; rotation = 0;
-                        draw_required = true;
-				        break;
-			        case SDLK_3:
-				        useClip = 2; rotation = 0;
-                        draw_required = true;
-				        break;
-			        case SDLK_4:
-				        useClip = 3; rotation = 0;
-                        draw_required = true;
-				        break;
-			        case SDLK_5:
-				        useClip = 4; rotation = 0;
-                        draw_required = true;
-				        break;
-			        case SDLK_6:
-				        useClip = 5; rotation = 0;
-                        draw_required = true;
-				        break;
-			        case SDLK_7:
-				        useClip = 6; rotation = 0;
-                        draw_required = true;
-				        break;
-			        case SDLK_ESCAPE:
-                    case SDLK_q:
-				        quit = true;
-				        break;
-                    case SDLK_DOWN:
-                        drop_y += 1;
-                        draw_required = true;
-                        if(!checkIfValidPosition()) { 
-                            drop_y -= 1;
-                            dropPiece();
-                        }
-                        break;
-                    case SDLK_LEFT:
-                        drop_x -= 1;
-                        draw_required = true;
-                        if(!checkIfValidPosition()) drop_x += 1;
-                        break;
-                    case SDLK_RIGHT:
-                        drop_x += 1;
-                        draw_required = true;
-                        if(!checkIfValidPosition()) drop_x -= 1;
-                        break;
-                    case SDLK_SPACE:
-                        draw_required = true;
-                        dropPiece();
-                        break;
-                    case SDLK_p:
-                        if(mode == MODE_PAUSE)  mode = MODE_RUNNING;
-                        else                    mode = MODE_PAUSE;
-                        break;
-			        default:
-				        break;
-		       }
-	        }
-	    }
-
-        fallTimer++;
-        if(fallTimer >= fallTimerLimit) {
-            fallTimer = 0;
-            drop_y += 1;
-            draw_required = true;
-            if(!checkIfValidPosition()) { 
-                drop_y -= 1;
-                dropPiece();
+        if(mode == MODE_RUNNING) {
+            fallTimer++;
+            if(fallTimer >= fallTimerLimit) {
+                fallTimer = 0;
+                drop_y += 1;
+                draw_required = true;
+                if(!checkIfValidPosition()) { 
+                    drop_y -= 1;
+                    dropPiece();
+                }
             }
         }
 
         if(draw_required) {
+            SDL_RenderClear(ren);
+
 	        //Render the scene
-	        SDL_RenderClear(ren);
-
-            int bW, bH;
-            SDL_QueryTexture(background, NULL, NULL, &bW, &bH);
-            renderTexture(background, ren, 0, 0);
-
-            //draw the fixed peices
-            int i, j, x, y;
-            for(i=0; i<10; i++) {
-                for(j=0; j<16; j++) {
-                    x =  GRID_START_X + BLOCK_SIZE * i;
-                    y =  GRID_START_Y + BLOCK_SIZE * j;
-                    int color = grid[i][j];
-                    if(color>0)
-                        renderTextureClip(blocks, ren, x, y, &blockClips[color-1]);
-                }
+            switch(mode) {
+                case MODE_RUNNING:
+	                draw_game_running(ren);
+                    break;
+                case MODE_PAUSE:
+                    draw_game_paused(ren);
+                    break;
+                default:
+                    break;
             }
 
-            DROP *d = (DROP*)dropData+useClip+1;
-            int r = rotation%(d->rotations);
-            PIECE *p = &(d->peice[r]);
-            x = drop_x;
-            y = drop_y;
-            drawPiece(ren, p, x, y, useClip);
-
-            //Draw the next piece to the right
-            DROP *dN = (DROP*)dropData+nextPiece+1;
-            PIECE *pN = &(dN->peice[0]); //rotation 0
-            x = drop_x;
-            y = drop_y;
-            drawPiece(ren, pN, NEXT_PIECE_X, NEXT_PIECE_Y, nextPiece);
-
-            if(scoreInBuffer != score) {
-                sprintf(score_buffer, "%lu", score);
-                scoreInBuffer = score;
-            }
-            SDL_Texture *font_image = renderText(score_buffer, font, score_color, ren);
-            if (font_image == NULL){
-	            return 1;
-            }            
-            renderTexture(font_image, ren, score_x, score_y);
+            draw_score(ren);
 
             SDL_RenderPresent(ren);
 
